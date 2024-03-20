@@ -11,7 +11,8 @@ mag requires Nextflow DSL2 (different to DSL1 that eager uses).
 
 So you need Nextflow version > 22.03.0-edge
 
-On Phoneix we have the module Nextflow/23.03.0 so do: `module load Nextflow/23.03.0` before running the pipeline.
+On Phoneix we have the module Nextflow/23.03.0 so do: `module load Nextflow/23.03.0` before running the pipeline. \
+(For a reason that I forgot, I installed Nextflow 23.10.0 myself and use that)
 
 We use Singularity to handle packages used by the pipeline so run `module load Singularity/3.10.5` as well.
 
@@ -91,6 +92,16 @@ screen -r mag
 ## Issues and my solutions
 
 Various issues I encountered while running this pipeline on Phoenix. I've done my best to describe the solutions below, if you find a better one please let me know!
+
+### Database download fails
+
+mag uses databases in a lot of steps. The default is for the pipeline to doenload these for you and then run the program. \
+This doens't work on phoenix because there is no internet access on the compute nodes.
+
+Solution: Download the databases manually from the login node (where there is internet) and give the paths in the command (like my example above)
+FYI: I have heard they are planning to change this behaviour in future versions of the pipeline.
+
+I have databases for CheckM, gunc, gtdbtk and busco saved and hard-coded the paths to the command.
 
 ### ERROR: "...mag stickied on revision X.XX..."
 
