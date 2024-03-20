@@ -7,9 +7,11 @@ I used version 2.5.4 of the pipeline while writing this wiki, some bugs may be r
 
 ## Dependencies
 
-mag requires Nextflow DSL2 (different to DSL1 that eager uses). \
-So you need Nextflow version > 22.03.0-edge \
-on Phoneix we have the module Nextflow/23.03.0 so do: `module load Nextflow/23.03.0` before running the pipeline.
+mag requires Nextflow DSL2 (different to DSL1 that eager uses). 
+
+So you need Nextflow version > 22.03.0-edge 
+
+On Phoneix we have the module Nextflow/23.03.0 so do: `module load Nextflow/23.03.0` before running the pipeline.
 
 We use Singularity to handle packages used by the pipeline so run `module load Singularity/3.10.5` as well.
 
@@ -45,4 +47,41 @@ nextflow run nf-core mag -r 2.5.4 \
  --gtdb /hpcfs/users/a1717363/micro_func/DB/gtdbtk/gtdbtk_r214_data.tar.gz \
  --ancient_dna \
  --pydamage_accuracy 0.5
+```
+
+## Running nf-core/mag in a screen on Phoenix
+
+- The nextflow pipeline will manage submission of individual slurm jobs to Phoenix.
+- This allows you to run the pipeline command from the terminal directly and then monitor progress as the jobs run.
+- BUT - if you get cut off from your login the pipeline will crash.
+- SOLUTION: run from a "screen"
+- A screen looks like a terminal but you can attach and detach from it wthout it breaking.
+
+1. run a screen named mag:
+
+```bash
+screen -S mag
+```
+
+2. Load the required modules:
+
+```bash
+module use /apps/skl/modules/all/
+module load Singularity/3.10.5
+module load Nextflow/23.03.0
+```
+
+3. Copy your nextflow run command onto the command line and press enter
+4. You should be able to see the progression of the pipeline in real time.
+5. To detatch from the screen press `Ctrl`+`a` and then `d`
+6. You can check the queue as normal to see which jobs are running:
+
+```bash
+squeue -u aXXXXXXX`
+```
+
+7. to Re-attatch to screen:
+
+```bash
+screen -r mag
 ```
