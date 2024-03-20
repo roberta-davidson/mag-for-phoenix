@@ -9,7 +9,7 @@ I used version 2.5.4 of the pipeline while writing this wiki, some bugs may be r
 
 mag requires Nextflow DSL2 (different to DSL1 that eager uses).
 
-So you need Nextflow version > 22.03.0-edge 
+So you need Nextflow version > 22.03.0-edge
 
 On Phoneix we have the module Nextflow/23.03.0 so do: `module load Nextflow/23.03.0` before running the pipeline.
 
@@ -92,10 +92,11 @@ screen -r mag
 
 Various issues I encountered while running this pipeline on Phoenix. I've done my best to describe the solutions below, if you find a better one please let me know!
 
-### "mag stickied on revision X.XX"
+### ERROR: "...mag stickied on revision X.XX..."
+
 I don't know why this happens but sometimes it can't find the versioin of the pipeline you are asking for even f iit exists and you've used it previously. (I had this issue with nf-core/eager once too).
 
-My solution was to clone my own copy of the mag repository locally and use that: 
+My solution was to clone my own copy of the mag repository locally and use that:
 
 1. Go to the [mag GitHub](https://github.com/nf-core/mag) to get the up to date repo link (click the green "Code" button and copy the link)
 
@@ -152,7 +153,7 @@ Command error:
 [21:24:53] Could not run command: cat MEGAHIT-MetaBAT2-group-10.14/MEGAHIT-MetaBAT2-group-10.14.IS.tmp.42.faa | parallel --gnu --plain -j 2 --block 14374 --recstart '>' --pipe blastp -query - -db /usr/local/db/kingdom/Bacteria/IS -evalue 1e-30 -qcov_hsp_perc 90 -num_threads 1 -num_descriptions 1 -num_alignments 1 -seg no > MEGAHIT-MetaBAT2-group-10.14/MEGAHIT-MetaBAT2-group-10.14.IS.tmp.42.blast 2> /dev/null
 ```
 
-This is an unresolved issue reported [here](https://github.com/nf-core/mag/issues/601)
+This is an unresolved issue reported [here](https://github.com/nf-core/mag/issues/601) with a work-around
 
 ### Single end data doesn't work
 
