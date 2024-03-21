@@ -164,7 +164,26 @@ Command error:
 [21:24:53] Could not run command: cat MEGAHIT-MetaBAT2-group-10.14/MEGAHIT-MetaBAT2-group-10.14.IS.tmp.42.faa | parallel --gnu --plain -j 2 --block 14374 --recstart '>' --pipe blastp -query - -db /usr/local/db/kingdom/Bacteria/IS -evalue 1e-30 -qcov_hsp_perc 90 -num_threads 1 -num_descriptions 1 -num_alignments 1 -seg no > MEGAHIT-MetaBAT2-group-10.14/MEGAHIT-MetaBAT2-group-10.14.IS.tmp.42.blast 2> /dev/null
 ```
 
-This is an unresolved issue reported [here](https://github.com/nf-core/mag/issues/601) with a work-around
+This is officially unresolved issue reported [here](https://github.com/nf-core/mag/issues/601) with a work-around. \
+My + Shyam's workaround is to download your own container image for Prokka. \
+For acad_users there is one in `/hpcfs/groups/acad_users/containers/prokka_1.14.6--pl5321hdfd78af_5.sif` \
+For some unkown reason this still didn't work when the pipeline submitted the prokka step to the cluster but it did work locally on the login node. \
+However then login node can't run in parallel if you have too many samples because it would try to write over the same tmp file for each sample at the same time. 
+
+Overall I ended up adding this to my `phoenix.config` file and there is a version of this config in this repo if you need a copy.
+
+```nextflow
+process {
+   executor = 'slurm'
+   clusterOptions="-N 1 -p skylake,icelake"
+  withName: PROKKA {
+    container = '/<path>/prokka_1.14.6--pl5321hdfd78af_5.sif'
+    executor = 'local'
+    maxForks = 1
+  }
+}
+```
+
 
 ### Single end data doesn't work
 
