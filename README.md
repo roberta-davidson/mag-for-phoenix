@@ -18,11 +18,11 @@ We use Singularity to handle packages used by the pipeline so run `module load S
 
 ## Institutional Configuration
 
-Other information that the pipeline needs to run on Phoenix is contained within the institutional configuration file. Called `phoenix.config` in this repo, copy it and pass to your submission script with `-c phoenix.config`.
+Other information that the pipeline needs to run on Phoenix is contained within the institutional configuration file. Called `phoenix.config` in this repo, and here I have also included additional modifications I found useful. Copy it and pass to your submission script with `-c phoenix.config`.
 
 ## Running the pipeline
 
-There is lots of good info on how to build a mag script on the [website](https://nf-co.re/mag/2.5.4)
+There is lots of good info on how to build a mag script on the nf-core/mag [website](https://nf-co.re/mag/2.5.4)
 
 Here is the one I'm currently using as an example:
 
@@ -30,7 +30,7 @@ Here is the one I'm currently using as an example:
 nextflow run nf-core mag -r 2.5.4 \
  -c ./phoenix.config \
  -profile singularity \
- --outdir /hpcfs/users/a1717363/micro_func/results \
+ --outdir /hpcfs/users/aXXXXXX/micro_func/results \
  --input samplesheet_paired.csv \
  --reads_minlength 15 \
  --megahit_options="--presets meta-large" \
@@ -40,12 +40,12 @@ nextflow run nf-core mag -r 2.5.4 \
  --min_contig_size 1500 \
  --bowtie2_mode="--very-sensitive" \
  --binqc_tool checkm \
- --checkm_db /hpcfs/users/a1717363/micro_func/DB/CheckM/ \
+ --checkm_db /hpcfs/users/aXXXXXX/micro_func/DB/CheckM/ \
  --skip_concoct \
  --refine_bins_dastool \
  --run_gunc \
- --gunc_db /hpcfs/users/a1717363/micro_func/DB/gunc/gunc_db_progenomes2.1.dmnd \
- --gtdb /hpcfs/users/a1717363/micro_func/DB/gtdbtk/gtdbtk_r214_data.tar.gz \
+ --gunc_db /hpcfs/users/aXXXXXX/micro_func/DB/gunc/gunc_db_progenomes2.1.dmnd \
+ --gtdb /hpcfs/users/aXXXXXX/micro_func/DB/gtdbtk/gtdbtk_r214_data.tar.gz \
  --ancient_dna \
  --pydamage_accuracy 0.5
 ```
@@ -93,19 +93,23 @@ screen -r mag
 
 Various issues I encountered while running this pipeline on Phoenix. I've done my best to describe the solutions below, if you find a better one please let me know!
 
+### Single end data doesn't work
+
+I don't remember why but SE data does not work, nor does collapsed paired end data pretending to be single end - use paired end reads!
+
 ### Database download fails
 
-mag uses databases in a lot of steps. The default is for the pipeline to doenload these for you and then run the program. \
+**Problem:** mag uses databases in a lot of steps. The default is for the pipeline to doenload these for you and then run the program. \
 This doens't work on phoenix because there is no internet access on the compute nodes.
 
-Solution: Download the databases manually from the login node (where there is internet) and give the paths in the command (like my example above)
+**Solution:** Download the databases manually from the login node (where there is internet) and give the paths in the command (like my example above) \
 FYI: I have heard they are planning to change this behaviour in future versions of the pipeline.
 
 I have databases for CheckM, gunc, gtdbtk and busco saved and hard-coded the paths to the command.
 
 ### ERROR: "...mag stickied on revision X.XX..."
 
-I don't know why this happens but sometimes it can't find the versioin of the pipeline you are asking for even f iit exists and you've used it previously. (I had this issue with nf-core/eager once too).
+I don't know why this happens but sometimes it can't find the version of the pipeline you are asking for even if it exists and you've used it previously. (I had this issue with nf-core/eager once too).
 
 My solution was to clone my own copy of the mag repository locally and use that:
 
@@ -117,7 +121,8 @@ My solution was to clone my own copy of the mag repository locally and use that:
 git clone https://github.com/nf-core/mag.git 
 ```
 
-3. Now you should have a directory `mag/` 
+3. Now you should have a directory `mag/`
+
 4. Change the first line of your pipeline run script replace `nf-core/mag -r X.XX` with `<path>/mag/`:
 
 ```bash
@@ -164,8 +169,41 @@ Command error:
 [21:24:53] Could not run command: cat MEGAHIT-MetaBAT2-group-10.14/MEGAHIT-MetaBAT2-group-10.14.IS.tmp.42.faa | parallel --gnu --plain -j 2 --block 14374 --recstart '>' --pipe blastp -query - -db /usr/local/db/kingdom/Bacteria/IS -evalue 1e-30 -qcov_hsp_perc 90 -num_threads 1 -num_descriptions 1 -num_alignments 1 -seg no > MEGAHIT-MetaBAT2-group-10.14/MEGAHIT-MetaBAT2-group-10.14.IS.tmp.42.blast 2> /dev/null
 ```
 
-This is an unresolved issue reported [here](https://github.com/nf-core/mag/issues/601) with a work-around
+This is an unresolved issue reported [here](https://github.com/nf-core/mag/issues/601) \
+For some reason I found that this is resolved by running prokka locally on the login node, rather than submitting to the compute nodes. This should be avoided when using a HPC but in this case it is the only way to run the step of the pipeline. \
+I added this to the `phoenix.config` file to execute locally and one at a time so the same temp files are not overwritten:
 
-### Single end data doesn't work
+```bash
+process {
+  withName: PROKKA {
+    container = '/hpcfs/groups/acad_users/containers/prokka_1.14.6--pl5321hdfd78af_5.sif'
+    executor = 'local'
+    maxForks = 1
+    }
+}
+```
 
-I don't remember why but SE data does not work, nor does collapsed paired end data pretending to be single end - use paired end reads!
+### GTDBTK_CLASSIFYWF step fails, PplacerException
+
+This is an error in the pplacer step of GTDB-Tk, also seen [here](https://github.com/Ecogenomics/GTDBTk/issues/352). The step is loading a whole phylogenetic tree so requires a lot of RAM. I added this to the config file to account for it.
+
+```bash
+process {
+  withName: GTDBTK_CLASSIFYWF {
+    memory = '200G'
+  }
+}
+```
+
+### process failing because no long contigs generated
+
+I don't remember the name of the process but typically if the sample does not have enough reads to generate any contigs longer than a certain length, it will error and stop the pipeline. \
+To ignore errors on this specific step add this to the `phoenix.config` file to ignore errors generated by that specifc step:
+
+```bash
+process {
+  withName: <process_name> {
+    errorStrategy 'ignore'
+  }
+}
+```
